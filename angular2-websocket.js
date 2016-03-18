@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -9,7 +10,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('angular2/core');
 var lang_1 = require('angular2/src/facade/lang');
-var Subject_1 = require("rxjs/Subject");
 var $WebSocket = (function () {
     function $WebSocket(url, protocols, config) {
         this.url = url;
@@ -35,7 +35,6 @@ var $WebSocket = (function () {
             throw new Error('Invalid url provided');
         }
         this.config = config || { initialTimeout: 500, maxTimeout: 300000, reconnectIfNotNormalClose: false };
-        this.dataStream = new Subject_1.Subject();
     }
     $WebSocket.prototype.connect = function (force) {
         var _this = this;
@@ -44,23 +43,16 @@ var $WebSocket = (function () {
         if (force || !this.socket || this.socket.readyState !== this.readyStateConstants.OPEN) {
             self.socket = this.protocols ? new WebSocket(this.url, this.protocols) : new WebSocket(this.url);
             self.socket.onopen = function (ev) {
-                //    console.log('onOpen: %s', ev);
                 _this.onOpenHandler(ev);
             };
             self.socket.onmessage = function (ev) {
-                //   console.log('onNext: %s', ev.data);
                 self.onMessageHandler(ev);
-                _this.dataStream.next(ev);
             };
             this.socket.onclose = function (ev) {
-                //     console.log('onClose, completed');
                 self.onCloseHandler(ev);
-                _this.dataStream.complete();
             };
             this.socket.onerror = function (ev) {
-                //    console.log('onError', ev);
                 self.onErrorHandler(ev);
-                _this.dataStream.error(ev);
             };
         }
     };
@@ -80,9 +72,6 @@ var $WebSocket = (function () {
         });
     };
     ;
-    $WebSocket.prototype.getDataStream = function () {
-        return this.dataStream;
-    };
     $WebSocket.prototype.onOpenHandler = function (event) {
         this.reconnectAttempts = 0;
         this.notifyOpenCallbacks(event);
@@ -160,7 +149,6 @@ var $WebSocket = (function () {
         this.close(true);
         var backoffDelay = this.getBackoffDelay(++this.reconnectAttempts);
         var backoffDelaySeconds = backoffDelay / 1000;
-        // console.log('Reconnecting in ' + backoffDelaySeconds + ' seconds');
         setTimeout(this.connect(), backoffDelay);
         return this;
     };
@@ -171,8 +159,6 @@ var $WebSocket = (function () {
         return this;
     };
     ;
-    // Exponential Backoff Formula by Prof. Douglas Thain
-    // http://dthain.blogspot.co.uk/2009/02/exponential-backoff-in-distributed.html
     $WebSocket.prototype.getBackoffDelay = function (attempt) {
         var R = Math.random() + 1;
         var T = this.config.initialTimeout;
@@ -188,10 +174,6 @@ var $WebSocket = (function () {
         }
         this.internalConnectionState = state;
     };
-    /**
-     * Could be -1 if not initzialized yet
-     * @returns {number}
-     */
     $WebSocket.prototype.getReadyState = function () {
         if (this.socket == null) {
             return -1;
@@ -203,5 +185,5 @@ var $WebSocket = (function () {
         __metadata('design:paramtypes', [String, Array, Object])
     ], $WebSocket);
     return $WebSocket;
-})();
+}());
 exports.$WebSocket = $WebSocket;

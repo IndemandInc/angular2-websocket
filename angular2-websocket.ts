@@ -24,7 +24,6 @@ export class $WebSocket  {
     private  normalCloseCode = 1000;
     private  reconnectableStatusCodes = [4000];
     private socket: WebSocket;
-    private dataStream: Subject<any>;
     private  internalConnectionState: number;
     constructor(private url:string, private protocols?:Array<string>, private config?: WebSocketConfig  ) {
         var match = new RegExp('wss?:\/\/').test(url);
@@ -32,7 +31,6 @@ export class $WebSocket  {
             throw new Error('Invalid url provided');
         }
         this.config = config ||{ initialTimeout: 500, maxTimeout : 300000, reconnectIfNotNormalClose :false};
-        this.dataStream = new Subject();
     }
 
     connect(force:boolean = false) {
@@ -47,18 +45,15 @@ export class $WebSocket  {
             self.socket.onmessage = (ev: MessageEvent) => {
                 //   console.log('onNext: %s', ev.data);
                 self.onMessageHandler(ev);
-                this.dataStream.next(ev);
             };
             this.socket.onclose = (ev: CloseEvent) => {
                 //     console.log('onClose, completed');
                 self.onCloseHandler(ev);
-                this.dataStream.complete()
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
                 //    console.log('onError', ev);
                 self.onErrorHandler(ev);
-                this.dataStream.error(ev);
             };
 
         }
@@ -79,10 +74,6 @@ export class $WebSocket  {
 
         });
     };
-
-    getDataStream():Subject<any>{
-        return this.dataStream;
-    }
 
     onOpenHandler(event: Event) {
         this.reconnectAttempts = 0;
@@ -228,4 +219,3 @@ export interface WebSocketConfig {
     maxTimeout:number ;
     reconnectIfNotNormalClose: boolean
 }
-
